@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Cumpleaños del mes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+    :root {
+        --bg-main: #7c2cff;
+        --card-bg: #ffffff;
+        --card-subtle: #f5f0ff;
+        --primary: #7c2cff;
+        --text-main: #1f1235;
+        --text-soft: #6b6b7b;
+        --radius-lg: 24px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #a855ff, #4c1d95);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+    }
+
+    .app {
+        width: 100%;
+        max-width: 480px;
+        padding: 24px 16px 40px;
+    }
+
+    .title {
+        text-align: center;
+        margin-bottom: 16px;
+    }
+    .title h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .title p {
+        font-size: 14px;
+        color: #f3e8ff;
+    }
+
+    .card {
+        background: var(--card-bg);
+        border-radius: 32px;
+        padding: 18px 16px 16px;
+        box-shadow: 0 12px 30px rgba(21, 10, 40, 0.45);
+    }
+
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .header-row h2 {
+        font-size: 18px;
+        color: var(--text-main);
+    }
+
+    .badge-month {
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #f97316, #fb7185);
+        color: white;
+    }
+
+    .list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .person {
+        background: var(--card-subtle);
+        border-radius: 18px;
+        padding: 10px 10px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .nombre {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 2px;
+    }
+
+    .detalle {
+        font-size: 12px;
+        color: var(--text-soft);
+    }
+
+    .detalle span {
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .upload-area {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+    }
+
+    .btn-upload {
+        border: none;
+        border-radius: 999px;
+        padding: 6px 12px;
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .status {
+        font-size: 10px;
+        color: #16a34a;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    @media (max-width: 480px) {
+        .card {
+            border-radius: 24px;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="app">
+    <div class="title">
+
+        <h1>Cumples del mes 🎉</h1>
+        <p>Subí la constancia de pago para cada cumpleañero</p>
+    </div>
+
+    <div class="card">
+        <div class="header-row">
+            <h2>Listado</h2>
+            <div class="badge-month" id="badgeMes"></div>
+        </div>
+        <div id="lista" class="list">
+            <!-- acá se inyectan las filas -->
+        </div>
+    </div>
+</div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz0b_OKwoSXNVhcq--7nM4K_DqOwJU1AMKFUB_w19QhP4yAbrjaHMeidWLfvZOp4XC7TQ/exec"; // la que te dio Apps Script
+
+// Helper: nombre del mes actual
+const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const hoy = new Date();
+document.getElementById('badgeMes').textContent = meses[hoy.getMonth()] + " " + hoy.getFullYear();
+
+// Traer cumpleañeros
+fetch(WEB_APP_URL + "?action=list")
+  .then(r => r.json())
+  .then(data => renderLista(data))
+  .catch(err => {
+      console.error(err);
+      document.getElementById('lista').innerHTML = "<p>Error al cargar los cumpleaños.</p>";
+  });
+
+function renderLista(personas) {
+    const cont = document.getElementById("lista");
+    cont.innerHTML = "";
+
+    if (!personas || personas.length === 0) {
+        cont.innerHTML = "<p style='color:#6b6b7b;font-size:13px;'>No hay cumpleaños este mes.</p>";
+        return;
+    }
+
+    personas.forEach((p, index) => {
+        const card = document.createElement("div");
+        card.className = "person";
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = p.nombre ? p.nombre.charAt(0).toUpperCase() : "?";
+
+        const info = document.createElement("div");
+        info.className = "info";
+        info.innerHTML = `
+            <div class="nombre">${p.nombre}</div>
+            <div class="detalle">
+    <span>🎂 ${p.fecha_cumple}</span>
+    <span>@${p.alias}</span>
+</div>
+        `;
+
+        const uploadArea = document.createElement("div");
+        uploadArea.className = "upload-area";
+
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.id = "file_" + index;
+
+        const btn = document.createElement("button");
+        btn.className = "btn-upload";
+        btn.textContent = "Subir constancia";
+        btn.onclick = () => fileInput.click();
+
+        const status = document.createElement("div");
+        status.className = "status";
+
+        fileInput.addEventListener("change", (e) => {
+            if (e.target.files.length === 0) return;
+            subirArchivo(e.target.files[0], p, status);
+        });
+
+        uploadArea.appendChild(btn);
+        uploadArea.appendChild(status);
+        card.appendChild(avatar);
+        card.appendChild(info);
+        card.appendChild(uploadArea);
+        card.appendChild(fileInput);
+
+        cont.appendChild(card);
+    });
+}
+
+// Subir archivo a Apps Script / Drive
+function subirArchivo(file, persona, statusEl) {
+    statusEl.style.color = "#f97316";
+    statusEl.textContent = "Subiendo...";
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result.split(",")[1];
+
+        const now = new Date();
+        const month = persona.mes;
+const year = new Date().getFullYear();
+
+        const ext = file.name.split(".").pop();
+        const nombreLimpio = persona.nombre.replace(/[^a-zA-Z0-9_]/g, "_");
+
+        const fileName = `${nombreLimpio}_${String(month).padStart(2,'0')}_${year}_constancia_pago.${ext}`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                fileName,
+                mimeType: file.type,
+                base64,
+                month,
+                year
+            })
+        })
+        .then(r => r.json())
+        .then(resp => {
+            if (resp.success) {
+                statusEl.style.color = "#16a34a";
+                statusEl.textContent = "Subido ✅";
+            } else {
+                statusEl.style.color = "#dc2626";
+                statusEl.textContent = "Error al subir";
+                console.error(resp);
+            }
+        })
+        .catch(err => {
+            statusEl.style.color = "#dc2626";
+            statusEl.textContent = "Error de red";
+            console.error(err);
+        });
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+</body>
+</html>
