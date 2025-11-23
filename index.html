@@ -275,17 +275,16 @@ const year = new Date().getFullYear();
 
         const fileName = `${nombreLimpio}_${String(month).padStart(2,'0')}_${year}_constancia_pago.${ext}`;
 
-        fetch(WEB_APP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                fileName,
-                mimeType: file.type,
-                base64,
-                month,
-                year
-            })
-        })
+fetch(WEB_APP_URL, {
+    method: "POST",
+    body: JSON.stringify({
+        fileName,
+        mimeType: file.type,
+        base64,
+        month,
+        year
+    })
+})
         .then(r => r.json())
         .then(resp => {
             if (resp.success) {
