@@ -454,6 +454,38 @@ input[type="file"] { display: none; }
         <h2 id="detalleTitulo"></h2>
         <p id="detalleFecha" style="color:#000;font-size:14px;margin-bottom:10px;"></p>
 
+<!-- CARD DATOS DEL TITULAR DEL ALIAS -->
+<div id="cardAlias" class="card-alias" style="margin-bottom:16px;display:none;">
+    <h3 style="color:#111;">Datos del titular del alias</h3>
+
+    <div class="alias-row" style="margin-top:6px; display:flex; align-items:center; gap:10px;">
+        <span style="color:#111; font-weight:600;">Alias:</span>
+        <span id="aliasValue" 
+              style="background:#f5f0ff;padding:6px 12px;border-radius:8px;color:#111;">
+        </span>
+
+        <button class="copy-btn" onclick="copiarAlias()"
+            style="background:#7c2cff;border:none;padding:6px 14px;border-radius:10px;color:#fff;cursor:pointer;">
+            Copiar
+        </button>
+    </div>
+
+<!-- EMAIL DE ENVÍO AUTOMÁTICO -->
+<div id="emailDestino" 
+     style="
+        margin-top:14px;
+        background: rgba(255,255,255,0.75);
+        padding:10px 12px;
+        border-radius:12px;
+        color:#111;
+        font-size:14px;
+        line-height:1.3;
+     ">
+    Los comprobantes serán enviados automáticamente a:<br>
+    <span id="emailValue" style="font-weight:600;color:#4c1d95;"></span>
+</div>
+
+</div>
 
         <div id="detalleLoading">
             <div class="detalle-spinner"></div>
@@ -505,7 +537,7 @@ function hideLoading() {
 }
 
 const WEB_APP_URL =
- "https://script.google.com/macros/s/AKfycbwDnbVRALUK3FEdfU5Dy_UqRhHYBM9jfP63I1ZG2L4wEoQq4E4ramySQqH-Tvj3Ig-3Pg/exec";
+ "https://script.google.com/macros/s/AKfycbxivmbfDwyBtmI7zt7hGOpri70xi7s7XTAjTyj8ZvdpUcfF-RJ8VW15aL4Kw7WWRjyemg/exec";
 
 const meses = [
     "Enero","Febrero","Marzo","Abril","Mayo","Junio",
@@ -719,8 +751,13 @@ document.getElementById("buscadorDetalle").value = "";
 
     document.getElementById("detalleFecha").innerHTML = `
         🎂 ${cumple.fecha_cumple} • 
-        <button id="aliasCopy" class="alias-btn">Copiar alias</button>
+        
     `;
+// Mostrar card de alias
+document.getElementById("cardAlias").style.display = "block";
+document.getElementById("aliasValue").innerText = cumple.alias;
+document.getElementById("emailValue").innerText = cumple.email_comprobante || "No informado";
+document.getElementById("emailDestino").style.display = "block";
 
     document.getElementById("listaCurso").style.display = "none";
     document.getElementById("detalleLoading").style.display = "flex";
@@ -800,7 +837,7 @@ function renderCurso(data, cumple) {
 
             const btn = document.createElement("button");
             btn.className = "btn-upload";
-            btn.textContent = "Subir constancia";
+            btn.textContent = "Subir captura de comprobante";
             btn.onclick = e => { e.stopPropagation(); inp.click(); };
 
             inp.addEventListener("change", e => {
@@ -867,7 +904,7 @@ function subirArchivoCurso(file, fileName, month, year, statusEl, id_cumple, id_
         .then(r => r.json())
         .then(resp => {
             if (resp.success) {
-                statusEl.textContent = "Transferencia realizada ✓";
+                statusEl.textContent = "Imagen de comprobante cargada ✓";
                 statusEl.style.color = "#16a34a";
                 statusEl.style.fontWeight = "bold";
 
@@ -922,6 +959,25 @@ document.getElementById("buscadorDetalle").addEventListener("input", function() 
         item.style.display = nombre.includes(texto) ? "flex" : "none";
     });
 });
+
+
+function copiarAlias() {
+    const alias = document.getElementById("aliasValue").innerText;
+    const btn = document.querySelector(".copy-btn");
+
+    navigator.clipboard.writeText(alias).then(() => {
+        // Cambiar texto del botón
+        btn.textContent = "Copiado ✓";
+        btn.style.background = "#16a34a";   // verde suave "success"
+        
+        // Volver al estado original luego de 2 segundos
+        setTimeout(() => {
+            btn.textContent = "Copiar";
+            btn.style.background = "#7c2cff"; // violeta original
+        }, 2000);
+    });
+}
+
 
 </script>
 
