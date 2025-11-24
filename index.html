@@ -401,10 +401,23 @@ input[type="file"] { display: none; }
 <div class="app fade-in" id="mainView">
     <h1>Cumples del mes 🎉</h1>
     <p>Subí la constancia de pago para cada cumpleañero</p>
+    <p id="montoMensual" style="
+    font-size:14px;
+    margin-top:6px;
+    color:#f9fafb;
+    font-weight:500;
+    background: rgba(255,255,255,0.12);
+    padding:8px 12px;
+    border-radius:12px;
+    backdrop-filter: blur(6px);
+    ">
+    Cargando monto mensual...
+</p>
 
     <div class="nav-btns">
         <button id="btnPrev">← Mes anterior</button>
-        <button id="btnNext">Mes siguiente →</button>
+        <button id="btnNext">Mes actual</button>
+
     </div>
 
     <div class="card fade-in">
@@ -436,6 +449,18 @@ input[type="file"] { display: none; }
         </div>
 
         <div id="listaCurso" class="list"></div>
+<p id="totalAPagar" style="
+    margin-top:16px;
+    font-size:15px;
+    font-weight:600;
+    color:#111;
+    background:rgba(255,255,255,0.7);
+    padding:10px 14px;
+    border-radius:12px;
+    display:none;
+">
+</p>
+
     </div>
 </div>
 
@@ -451,13 +476,14 @@ function hideLoading() {
 }
 
 const WEB_APP_URL =
- "https://script.google.com/macros/s/AKfycbwEzWClX4Q_XLEFPLtjGBhkhJZK3vCq1fLg6lzY-tRBrh_pJaZINy5xSKBXp0R3QOkDhQ/exec";
+ "https://script.google.com/macros/s/AKfycbxwi5GV506dMQfjSftEl1B2epmHt9RHzXAZHLb05APeRR01JsRAxevBwa9VmC0D9q8qKQ/exec";
 
 const meses = [
     "Enero","Febrero","Marzo","Abril","Mayo","Junio",
     "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
 ];
 
+let montoMensualValor = 0;
 let hoy   = new Date();
 let hoyMes  = hoy.getMonth() + 1;
 let hoyAnio = hoy.getFullYear();
@@ -499,13 +525,11 @@ document.getElementById("btnPrev").onclick = () => {
 };
 
 document.getElementById("btnNext").onclick = () => {
-    mesActualEnPantalla++;
-    if (mesActualEnPantalla === 13) {
-        mesActualEnPantalla = 1;
-        anioActualEnPantalla++;
-    }
+    mesActualEnPantalla = hoyMes;
+    anioActualEnPantalla = hoyAnio;
     cargarCumples();
 };
+
 
 /* =====================================================
    SKELETON (lista principal)
@@ -519,6 +543,29 @@ function renderSkeletonLista() {
         cont.appendChild(sk);
     }
 }
+
+
+
+
+function cargarMontoMensual() {
+    fetch(`${WEB_APP_URL}?action=parametro&key=monto_mensual`)
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.value) {
+                montoMensualValor = Number(data.value);
+                document.getElementById("montoMensual").textContent =
+                    `El monto a transferir para cada cumpleaños es de: $${data.value}`;
+            } else {
+                document.getElementById("montoMensual").textContent =
+                    "No se pudo cargar el monto mensual.";
+            }
+        })
+        .catch(() => {
+            document.getElementById("montoMensual").textContent =
+                "Error cargando el monto mensual.";
+        });
+}
+
 
 /* =====================================================
    CARGAR CUMPLES
@@ -701,6 +748,14 @@ function renderCurso(data, cumple) {
 
         cont.appendChild(row);
     });
+// === Calcular total transferido para este cumple ===
+const countPagos = historial.filter(h =>
+    h.id_cumple == cumple.id_cumple
+).length;
+
+const total = countPagos * montoMensualValor;
+
+
 }
 
 /* =====================================================
@@ -760,6 +815,7 @@ document.addEventListener("click", e => {
    INICIO
 ===================================================== */
 cargarCumples();
+cargarMontoMensual();
 </script>
 
 </body>
