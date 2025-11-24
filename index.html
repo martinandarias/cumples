@@ -133,6 +133,9 @@ body {
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.4);
 }
 
+
+
+
 /* =====================================================
    FAB "VOLVER AL MES ACTUAL"
 ===================================================== */
@@ -271,6 +274,90 @@ body {
     color: var(--text-soft);
 }
 
+
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.info-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(255,255,255,0.16);
+    color: #f9fafb;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 14px rgba(15,23,42,0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.info-btn:hover {
+    background: rgba(255,255,255,0.24);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(15,23,42,0.6);
+}
+
+/* MODAL INFO */
+.info-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.55);
+    backdrop-filter: blur(4px);
+    display: none;            /* se muestra por JS */
+    align-items: center;
+    justify-content: center;
+    z-index: 2500;
+}
+
+.info-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 18px 18px 14px;
+    max-width: 320px;
+    width: 90%;
+    box-shadow: 0 20px 50px rgba(15,23,42,0.55);
+    font-family: 'Inter', sans-serif;
+    color: #111827;
+}
+
+.info-card h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.info-card ol {
+    margin-left: 18px;
+    font-size: 14px;
+    color: #374151;
+}
+
+.info-card li {
+    margin-bottom: 4px;
+}
+
+.info-close {
+    margin-top: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+
 /* =====================================================
    ALIAS / SUBIR CONSTANCIA
 ===================================================== */
@@ -393,15 +480,75 @@ input[type="file"] { display: none; }
 @media (max-width: 480px) {
     .card { border-radius: 26px; }
 }
+
+/* BOTÓN FLOTANTE MÁS INFO */
+.floating-info-btn {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 2000;
+    background: linear-gradient(135deg, #8b5cf6, #4c1d95);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.floating-info-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+}
+
+.floating-info-btn:active {
+    transform: translateY(1px);
+}
+
 </style>
 </head>
 
 <body>
 
+
+
+
+
 <!-- OVERLAY LOADING GLOBAL -->
 <div id="loadingOverlay">
     <div class="loader"></div>
 </div>
+
+<!-- MODAL INFO -->
+<!-- MODAL INFO -->
+<div id="infoModal" class="info-modal">
+    <div class="info-card">
+        <h2>¿Cómo funciona?</h2>
+        <ol>
+            <li>Entrá al cumpleaños.</li>
+            <li>Copiá el alias.</li>
+            <li>Hacé la transferencia.</li>
+            <li>Subí la imagen de la transferencia.</li>
+            <li>La imagen llega directo al titular del alias por email.</li>
+        </ol>
+        <p style="margin-top:10px;font-size:13px;color:#6b7280;">
+            Listo: fácil, simple y ágil 💜
+        </p>
+        <button id="infoClose" class="info-close">Entendido</button>
+    </div>
+</div>
+
+
+<!-- FAB VOLVER AL MES ACTUAL -->
+<button id="btnHoy">Mes<br>actual</button>
+
+
 
 <!-- FAB VOLVER AL MES ACTUAL -->
 <button id="btnHoy">Mes<br>actual</button>
@@ -410,11 +557,14 @@ input[type="file"] { display: none; }
      VISTA PRINCIPAL
 ============================ -->
 <div class="app fade-in" id="mainView">
-    <h1>Cumples del mes 🎉</h1>
-    <p>Subí la constancia de pago para cada cumpleañero</p>
+    <h1>Cumples del mes 🎉  </h1>
+    <p style="font-size:14px; color:#e5e7eb;">
+    Dejá de anotar los cumples en la heladera… mantenete al día con las transferencias de los regalos 🎁
+</p>
     <p id="montoMensual" style="
     font-size:14px;
     margin-top:6px;
+margin-bottom:16px;   /* 👈 ESPACIO NUEVO */
     color:#f9fafb;
     font-weight:500;
     background: rgba(255,255,255,0.12);
@@ -525,6 +675,8 @@ input[type="file"] { display: none; }
     </div>
 </div>
 
+
+<button id="floatingInfoBtn" class="floating-info-btn">ℹ️ Más info</button>
 <!-- =====================================================
      SCRIPT
 ===================================================== -->
@@ -717,9 +869,40 @@ if (pct > 25)  mensaje = "Se siente el impulso del grupo 🚀";
 if (pct > 60)  mensaje = "¡Ya falta poco! Gracias por sumarse 🙌";
 if (pct > 90)  mensaje = "¡Este cumple explota! 🎉 Gracias a todos";
 
+// === Calcular diferencia de días ===
+const [dia, mes, anio] = p.fecha_cumple.split("/").map(Number);
+const fechaCumple = new Date(anio, mes - 1, dia);
+const hoy2 = new Date();
+
+hoy2.setHours(0,0,0,0);
+fechaCumple.setHours(0,0,0,0);
+
+const diffMs = fechaCumple - hoy2;
+const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+let mensajeDias = "";
+
+if (diffDias > 0) {
+    mensajeDias = `⏳ Te quedan ${diffDias} días, no cuelgues`;
+} 
+else if (diffDias === 0) {
+    mensajeDias = `🔥 ¡Es hoy, dale, no cuelgues!`;
+} 
+else {
+    mensajeDias = `📅 El cumple ya pasó, pero transferí igual si no lo hiciste`;
+}
+
+
 info.innerHTML = `
     <div class="nombre">${p.nombre} <span style="font-size:18px;">${emoji}</span></div>
-    <div class="detalle">🎂 ${p.fecha_cumple}</div>
+
+    <div class="detalle">
+        🎂 ${p.fecha_cumple}
+        <span style="font-size:11px; margin-left:8px; color:#4c1d95;">
+            ${mensajeDias}
+        </span>
+    </div>
+
     <div class="detalle" style="font-size:11px;opacity:0.8;">
         ${pagos} de ${total} transferencias
     </div>
@@ -978,8 +1161,38 @@ function copiarAlias() {
     });
 }
 
+// =====================================================
+// MODAL INFO
+// =====================================================
+const infoModal       = document.getElementById("infoModal");
+const infoClose       = document.getElementById("infoClose");
+const floatingInfoBtn = document.getElementById("floatingInfoBtn");
+
+// Abrir modal desde el botón flotante
+if (floatingInfoBtn) {
+    floatingInfoBtn.addEventListener("click", () => {
+        infoModal.style.display = "flex";
+    });
+}
+
+// Cerrar con el botón "Entendido"
+if (infoClose) {
+    infoClose.addEventListener("click", () => {
+        infoModal.style.display = "none";
+    });
+}
+
+// Cerrar haciendo click afuera de la tarjeta
+infoModal.addEventListener("click", (e) => {
+    if (e.target === infoModal) {
+        infoModal.style.display = "none";
+    }
+});
+
+
 
 </script>
+
 
 </body>
 </html>
