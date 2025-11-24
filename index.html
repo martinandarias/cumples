@@ -90,6 +90,29 @@
         gap: 8px;
         align-items: center;
     }
+.person {
+    background: var(--card-subtle);
+    border-radius: 18px;
+    padding: 10px 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer; /* cursor manito */
+}
+
+/* Efecto hover */
+.person:hover {
+    background: #eee6ff; /* un violeta muy suave */
+    box-shadow: 0 4px 12px rgba(124, 44, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+
+#aliasCopy:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+}
 
     .avatar {
         width: 38px;
@@ -146,6 +169,37 @@
         white-space: nowrap;
     }
 
+.alias-btn {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: white;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    animation: aliasPulse 2s infinite alternate;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Animación suave de color “respirando” */
+@keyframes aliasPulse {
+    0% {
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        transform: scale(1);
+    }
+    100% {
+        background: linear-gradient(135deg, #a855f7, #7c3aed);
+        transform: scale(1.05);
+    }
+}
+
+.alias-btn:hover {
+    opacity: 0.9;
+    transform: scale(1.07);
+}
+
+
     .status {
         font-size: 10px;
         color: #16a34a;
@@ -164,7 +218,8 @@
 </head>
 <body>
 <div class="app">
-    <div class="title">
+    <div class="app" id="mainView">
+
 
         <h1>Cumples del mes 🎉</h1>
         <p>Subí la constancia de pago para cada cumpleañero</p>
@@ -181,8 +236,26 @@
     </div>
 </div>
 
+<div class="app" id="detalle" style="display:none;">
+    <button id="volver" style="
+        background:none;border:none;color:white;font-size:16px;margin-bottom:10px;cursor:pointer;">
+        ← Volver
+    </button>
+
+    <div class="card">
+        <h2 id="detalleTitulo"></h2>
+        <p id="detalleFecha" style="color:#6b6b7b;font-size:14px;margin-bottom:10px;"></p>
+
+        <div id="listaCurso" class="list"></div>
+    </div>
+</div>
+
+
+
+
+
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz0b_OKwoSXNVhcq--7nM4K_DqOwJU1AMKFUB_w19QhP4yAbrjaHMeidWLfvZOp4XC7TQ/exec"; // la que te dio Apps Script
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyZQIfMET2DlOP6pJakkbo5feNUckhemURbG3-oE8qQpbd9Jl82U2RjYtcVtMN4UaWhdQ/exec"; // la que te dio Apps Script
 
 // Helper: nombre del mes actual
 const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -208,8 +281,12 @@ function renderLista(personas) {
     }
 
     personas.forEach((p, index) => {
+
         const card = document.createElement("div");
         card.className = "person";
+
+        // Navegar al detalle
+        card.onclick = () => abrirDetalle(p);
 
         const avatar = document.createElement("div");
         avatar.className = "avatar";
@@ -220,42 +297,18 @@ function renderLista(personas) {
         info.innerHTML = `
             <div class="nombre">${p.nombre}</div>
             <div class="detalle">
-    <span>🎂 ${p.fecha_cumple}</span>
-    <span>@${p.alias}</span>
-</div>
+                <span>🎂 ${p.fecha_cumple}</span>
+                
+            </div>
         `;
 
-        const uploadArea = document.createElement("div");
-        uploadArea.className = "upload-area";
-
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.accept = "image/*";
-        fileInput.id = "file_" + index;
-
-        const btn = document.createElement("button");
-        btn.className = "btn-upload";
-        btn.textContent = "Subir constancia";
-        btn.onclick = () => fileInput.click();
-
-        const status = document.createElement("div");
-        status.className = "status";
-
-        fileInput.addEventListener("change", (e) => {
-            if (e.target.files.length === 0) return;
-            subirArchivo(e.target.files[0], p, status);
-        });
-
-        uploadArea.appendChild(btn);
-        uploadArea.appendChild(status);
         card.appendChild(avatar);
         card.appendChild(info);
-        card.appendChild(uploadArea);
-        card.appendChild(fileInput);
 
         cont.appendChild(card);
     });
 }
+
 
 // Subir archivo a Apps Script / Drive
 function subirArchivo(file, persona, statusEl) {
@@ -304,6 +357,169 @@ fetch(WEB_APP_URL, {
     };
     reader.readAsDataURL(file);
 }
+
+function abrirDetalle(cumple) {
+    window.aliasActual = cumple.alias;
+    window.cumpleNombreCompleto = cumple.nombre;
+
+    document.getElementById("mainView").style.display = "none";
+    document.getElementById("detalle").style.display = "block";
+
+    document.getElementById("detalleTitulo").textContent = cumple.nombre;
+
+    document.getElementById("detalleFecha").innerHTML = `
+        🎂 ${cumple.fecha_cumple}
+        •
+        <button id="aliasCopy" class="alias-btn">Copiar alias</button>
+    `;
+
+    fetch(WEB_APP_URL + "?action=curso")
+        .then(r => r.json())
+        .then(data => renderCurso(data, cumple))
+        .catch(err => console.error(err));
+}
+
+
+
+function renderCurso(listado, cumple) {
+    const cont = document.getElementById("listaCurso");
+    cont.innerHTML = "";
+
+    listado.forEach((alumno, index) => {
+        const row = document.createElement("div");
+        row.className = "person";
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = alumno.nombre.charAt(0).toUpperCase();
+
+        const info = document.createElement("div");
+        info.className = "info";
+        info.innerHTML = `
+            <div class="nombre">${alumno.nombre} ${alumno.apellido}</div>
+            <div class="detalle">
+                <span>${alumno.estado}</span>
+            </div>
+        `;
+
+        const uploadArea = document.createElement("div");
+        uploadArea.className = "upload-area";
+
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.id = "curso_file_" + index;
+
+        const btn = document.createElement("button");
+        btn.className = "btn-upload";
+        btn.textContent = "Subir constancia";
+        btn.onclick = (event) => {
+            event.stopPropagation();
+            fileInput.click();
+        };
+
+        const status = document.createElement("div");
+        status.className = "status";
+
+        fileInput.addEventListener("change", (e) => {
+    if (e.target.files.length === 0) return;
+    const file = e.target.files[0];
+
+    // Mes y año del cumple seleccionado
+    const month = cumple.mes;
+    const year = new Date().getFullYear();
+
+    const ext = file.name.split(".").pop();
+
+    // Alumno
+    const alumnoBase = `${alumno.nombre}_${alumno.apellido}`.replace(/[^a-zA-Z0-9]/g, "_");
+
+    // Cumpleañero
+    const cumpleBase = window.cumpleNombreCompleto.replace(/[^a-zA-Z0-9]/g, "_");
+
+    // Nombre final NUEVO
+    const fileName = `${cumpleBase}__${alumnoBase}_${month}_${year}_constancia_pago.${ext}`;
+
+    subirArchivoCurso(file, fileName, month, year, status);
+});
+
+
+        uploadArea.appendChild(btn);
+        uploadArea.appendChild(status);
+
+        row.appendChild(avatar);
+        row.appendChild(info);
+        row.appendChild(uploadArea);
+        row.appendChild(fileInput);
+
+        cont.appendChild(row);
+    });
+}
+function subirArchivoCurso(file, fileName, month, year, statusEl) {
+    statusEl.style.color = "#f97316";
+    statusEl.textContent = "Subiendo...";
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result.split(",")[1];
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                fileName,
+                mimeType: file.type,
+                base64,
+                month,
+                year
+            })
+        })
+        .then(r => r.json())
+        .then(resp => {
+            if (resp.success) {
+                statusEl.style.color = "#16a34a";
+                statusEl.textContent = "Subido ✓";
+            } else {
+                statusEl.style.color = "#dc2626";
+                statusEl.textContent = "Error";
+            }
+        })
+        .catch(err => {
+            statusEl.style.color = "#dc2626";
+            statusEl.textContent = "Error de red";
+        });
+    };
+    reader.readAsDataURL(file);
+}
+
+document.getElementById("volver").onclick = () => {
+    document.getElementById("detalle").style.display = "none";
+    document.getElementById("mainView").style.display = "block";
+};
+
+
+
+document.addEventListener("click", function(e) {
+    if (e.target && e.target.id === "aliasCopy") {
+
+        const alias = window.aliasActual; // 👈 ahora sí copia el alias real
+
+        navigator.clipboard.writeText(alias).then(() => {
+
+            e.target.textContent = "Alias copiado ✓";
+            e.target.style.background = "linear-gradient(135deg, #16a34a, #22c55e)";
+            e.target.style.transform = "scale(1.05)";
+            e.target.style.animation = "none";
+
+            setTimeout(() => {
+                e.target.textContent = "Copiar alias";
+                e.target.style.background = "";
+                e.target.style.animation = "aliasPulse 2s infinite alternate";
+            }, 1500);
+        });
+    }
+});
+
+
 </script>
 </body>
 </html>
