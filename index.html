@@ -476,7 +476,7 @@ function hideLoading() {
 }
 
 const WEB_APP_URL =
- "https://script.google.com/macros/s/AKfycbxwi5GV506dMQfjSftEl1B2epmHt9RHzXAZHLb05APeRR01JsRAxevBwa9VmC0D9q8qKQ/exec";
+ "https://script.google.com/macros/s/AKfycbzlebHFF3mfe6G5ae4DRpd79WnPMBgkEkrdHwgJcILTl5zQ_47lEdFp8ppkCfeJGEHxZA/exec";
 
 const meses = [
     "Enero","Febrero","Marzo","Abril","Mayo","Junio",
@@ -549,7 +549,14 @@ function renderSkeletonLista() {
 
 function cargarMontoMensual() {
     fetch(`${WEB_APP_URL}?action=parametro&key=monto_mensual`)
-        .then(r => r.json())
+        .then(async r => {
+    const text = await r.text();
+    try {
+        return JSON.parse(text);
+    } catch(e) {
+        return { success: true }; // fallback
+    }
+})
         .then(data => {
             if (data && data.value) {
                 montoMensualValor = Number(data.value);
