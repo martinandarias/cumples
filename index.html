@@ -41,9 +41,20 @@ body {
     text-rendering: optimizeLegibility;
 }
 
+.row-spinner {
+    border: 3px solid #e5d9ff;
+    border-top: 3px solid #7c3aed;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin-top: 4px;
+}
+
+
 .app {
     width: 100%;
-    max-width: 480px;
+    max-width: 600px; /* o más si querés */
     padding: 24px 16px 40px;
 }
 
@@ -448,6 +459,24 @@ input[type="file"] { display: none; }
             <div class="detalle-spinner"></div>
         </div>
 
+
+<input 
+    id="buscadorDetalle" 
+    type="text" 
+    placeholder="Buscar familia de..."
+    style="
+        width:100%;
+        padding:10px 14px;
+        margin-bottom:12px;
+        border-radius:12px;
+        border:none;
+        outline:none;
+        font-size:14px;
+        background: rgba(255,255,255,0.8);
+        color:#111;
+    "
+>
+
         <div id="listaCurso" class="list"></div>
 <p id="totalAPagar" style="
     margin-top:16px;
@@ -476,7 +505,7 @@ function hideLoading() {
 }
 
 const WEB_APP_URL =
- "https://script.google.com/macros/s/AKfycbzlebHFF3mfe6G5ae4DRpd79WnPMBgkEkrdHwgJcILTl5zQ_47lEdFp8ppkCfeJGEHxZA/exec";
+ "https://script.google.com/macros/s/AKfycbwDnbVRALUK3FEdfU5Dy_UqRhHYBM9jfP63I1ZG2L4wEoQq4E4ramySQqH-Tvj3Ig-3Pg/exec";
 
 const meses = [
     "Enero","Febrero","Marzo","Abril","Mayo","Junio",
@@ -590,11 +619,27 @@ function cargarCumples() {
 
     fetch(`${WEB_APP_URL}?action=list&mes=${mesActualEnPantalla}&anio=${anioActualEnPantalla}`)
         .then(r => r.json())
-        .then(data => {
-            renderLista(data);
-            lista.classList.remove("fade-out");
-            hideLoading();
+        .then(async data => {
+
+    // Para cada cumple, pedimos su detalle con totales
+    const dataConTotales = await Promise.all(
+        data.map(async cumple => {
+            const detalle = await fetch(`${WEB_APP_URL}?action=curso&id_cumple=${cumple.id_cumple}`)
+                                  .then(r => r.json());
+
+            return {
+                ...cumple,
+                total_familias: detalle.total_familias,
+                pagos_realizados: detalle.pagos_realizados
+            };
         })
+    );
+
+    renderLista(dataConTotales);
+    lista.classList.remove("fade-out");
+    hideLoading();
+})
+
         .catch(() => {
             lista.classList.remove("fade-out");
             hideLoading();
@@ -624,10 +669,34 @@ function renderLista(personas) {
 
         const info = document.createElement("div");
         info.className = "info";
-        info.innerHTML = `
-            <div class="nombre">${p.nombre}</div>
-            <div class="detalle">🎂 ${p.fecha_cumple}</div>
-        `;
+        const total = p.total_familias ?? 0;
+const pagos = p.pagos_realizados ?? 0;
+const pct = total > 0 ? Math.round((pagos / total) * 100) : 0;
+
+// Caritas
+let emoji = "😰";
+if (pct > 90) emoji = "🎉";
+else if (pct > 60) emoji = "😄";
+else if (pct > 25) emoji = "🙂";
+
+// Mensajes motivacionales
+let mensaje = "Vamos que recién arrancamos 💪";
+if (pct > 25)  mensaje = "Se siente el impulso del grupo 🚀";
+if (pct > 60)  mensaje = "¡Ya falta poco! Gracias por sumarse 🙌";
+if (pct > 90)  mensaje = "¡Este cumple explota! 🎉 Gracias a todos";
+
+info.innerHTML = `
+    <div class="nombre">${p.nombre} <span style="font-size:18px;">${emoji}</span></div>
+    <div class="detalle">🎂 ${p.fecha_cumple}</div>
+    <div class="detalle" style="font-size:11px;opacity:0.8;">
+        ${pagos} de ${total} transferencias
+    </div>
+
+    <div class="detalle" style="font-size:12px;margin-top:4px;font-weight:500;color:#4c1d95;">
+        ${mensaje}
+    </div>
+`;
+
 
         card.appendChild(avatar);
         card.appendChild(info);
@@ -639,6 +708,7 @@ function renderLista(personas) {
    DETALLE
 ===================================================== */
 function abrirDetalle(cumple) {
+document.getElementById("buscadorDetalle").value = "";
     window.aliasActual = cumple.alias;
     window.cumpleNombreCompleto = cumple.nombre;
 
@@ -658,6 +728,9 @@ function abrirDetalle(cumple) {
     fetch(`${WEB_APP_URL}?action=curso&id_cumple=${cumple.id_cumple}`)
         .then(r => r.json())
         .then(data => {
+// Guardamos los totales dentro del cumple
+            cumple.total_familias   = data.total_familias;
+            cumple.pagos_realizados = data.pagos_realizados;
             renderCurso(data, cumple);
             document.getElementById("detalleLoading").style.display = "none";
             document.getElementById("listaCurso").style.display = "flex";
@@ -665,9 +738,15 @@ function abrirDetalle(cumple) {
 }
 
 document.getElementById("volver").onclick = () => {
+
+    // Mostrar vista principal
     document.getElementById("mainView").style.display = "block";
     document.getElementById("detalle").style.display = "none";
+
+    // 🔥 Volver a cargar cumpleaños para actualizar porcentajes
+    cargarCumples();
 };
+
 
 /* =====================================================
    CURSO + HISTORIAL
@@ -738,8 +817,8 @@ function renderCurso(data, cumple) {
 
                 const fileName = `${cumpleBase}__${alumnoBase}_${month}_${year}_constancia_pago.${ext}`;
 
-                status.textContent = "Subiendo...";
-                status.style.color = "#f97316";
+                status.innerHTML = `<div class="row-spinner"></div>`;
+
 
                 subirArchivoCurso(file, fileName, month, year, status, cumple.id_cumple, alumno.id_curso);
             });
@@ -791,6 +870,13 @@ function subirArchivoCurso(file, fileName, month, year, statusEl, id_cumple, id_
                 statusEl.textContent = "Transferencia realizada ✓";
                 statusEl.style.color = "#16a34a";
                 statusEl.style.fontWeight = "bold";
+
+        // 🔥 OCULTAR BOTÓN APENAS SUBE OK
+        const btn = statusEl.previousSibling; // el botón está justo antes del status
+        if (btn && btn.tagName === "BUTTON") {
+            btn.style.display = "none";
+        }
+
             } else {
                 statusEl.textContent = "Error al subir";
                 statusEl.style.color = "#dc2626";
@@ -823,6 +909,20 @@ document.addEventListener("click", e => {
 ===================================================== */
 cargarCumples();
 cargarMontoMensual();
+
+// =====================================================
+// BUSCADOR EN DETALLE
+// =====================================================
+document.getElementById("buscadorDetalle").addEventListener("input", function() {
+    const texto = this.value.toLowerCase();
+    const items = document.querySelectorAll("#listaCurso .person");
+
+    items.forEach(item => {
+        const nombre = item.innerText.toLowerCase();
+        item.style.display = nombre.includes(texto) ? "flex" : "none";
+    });
+});
+
 </script>
 
 </body>
